@@ -1,0 +1,105 @@
+<%- include('layout.ejs'); %>
+<section class="users">
+    <header>
+      <div class="content">
+        <img src="<%-user.src%>" alt="">
+        <div class="details">
+          <span> <%= user.FNAME %> <%= user.LNAME %></span>
+          <p style="color: green; font-weight: 900; font-style: italic;"> Online</p>
+        </div>
+      </div>
+      <a href="/logout?id=<%-user.ACCOUNT_ID%>" class="logout" >Đăng xuất</a>
+    </header>
+    <div class="search">
+      <span class="text">Lựa chọn bạn bè để trò chuyện</span>
+      <input class="" type="text" name="search" onkeyup="search_user()" placeholder="Nhập tên để tìm kiếm">
+      <button class=""><i class="fas fa-search"></i></button>
+    </div>
+    <div class="users-list">
+      
+    </div>
+  </section>
+</div>
+<script>
+  let pause = false;
+  $(".search button").click(()=>{
+    $(".search button").toggleClass("active");
+    $(".search input").toggleClass("show");
+    if(!$(".search input").hasClass("show")){
+      pause = false;
+    }
+  })
+  
+  function search_user(){
+    let input = $(".search input").val().toLowerCase();
+    if (!input){
+      pause = false;
+    }
+    else {
+      pause = true;
+    }
+    let user = $(".users-list span");
+    // console.log(user.eq(0).parents("a"));
+    for (i = 0; i < user.length; i++) { 
+        if (!user.eq(i).text().toLowerCase().includes(input)) {
+            user.eq(i).parents("a").hide();
+        }
+        else {
+            user.eq(i).parents("a").show();                 
+        }
+    }
+  }
+  setInterval(()=>{
+    if(!pause){
+    let list ='';
+    let reqHeader = new Headers();
+    reqHeader.append('Content-Type', 'application/json');
+    let initObject = {
+      method: 'GET', 
+      headers: reqHeader,
+    };
+    var userRequest = new Request('http://localhost:3000/userActive', initObject);
+    fetch(userRequest)
+      .then(function (response) {
+          return response.json();
+      })
+      .then(function (data) {
+          data.forEach((element,index) => {
+          if(element.ACCOUNT_ID != '<%-user.ACCOUNT_ID%>'){
+            list += `<a class="activeList" href="/chat?userOut_id=${element.ACCOUNT_ID}&imgSrc=${element.src}">
+                    <div class="content">
+                      <img src="${element.src}" alt="">
+                      <div class="details">
+                      <span> ${element.FNAME}${element.LNAME} %></span>
+                      <p style="color: green; font-weight: 900; font-style: italic;"> ${element.Status}</p>
+                      </div>
+                    </div></a>`;
+          }
+          $(".users-list").html(list);
+          })
+      })
+      .catch(function (err) {
+          console.log("Error!!!", err);
+      });
+  }
+  },500);
+
+var idleTime = 0;
+$(document).ready(function () {
+    var idleInterval = setInterval(timerIncrement, 60000); // 1 minute
+    $(this).mousemove(function (e) {
+        idleTime = 0;
+    });
+    $(this).keypress(function (e) {
+        idleTime = 0;
+    });
+});
+function timerIncrement() {
+    idleTime = idleTime + 1;
+    if (idleTime > 10) { // 10 minutes
+      $("a.logout")[0].click()
+  }
+}
+</script>
+</body>
+</html>

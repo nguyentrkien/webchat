@@ -1,0 +1,120 @@
+<%- include('layout.ejs'); %>
+<section class="chat-area">
+    <header>
+      <a href="/user" class="back-icon">
+        <i class="fas fa-arrow-left"></i>
+      </a>
+      <img src="<%- user_chat.src %>" alt="">
+      <div class="details">
+        <span><%= user_chat.FNAME +' '+ user_chat.LNAME %></span>
+        <div><%= user_chat.Status %></div>
+      </div>
+    </header>
+    <div class="chat-box">
+
+    </div>
+    <form class="typing-area">
+      <input type="text" name="incoming_id" class="incoming_id" id="" hidden> 
+      <input type="text" name="message" class="input-field" placeholder="Nhập nội dung ở đây..." autocomplete="off">
+      <button class="sendButton" type="submit"><i class="fab fa-telegram-plane"></i></button>
+    </form>
+  </section>
+</div>
+<script>
+  const form = document.querySelector(".typing-area");
+  var active = true;
+  const Incoming_id = "<%-ID_in%>"
+  const Outcoming_id = '<%- user_chat.ACCOUNT_ID %>';
+  form.onsubmit = (e)=>{
+    e.preventDefault();}
+$("form .input-field").focus();
+$("form .input-field").keyup(()=>{
+    if($("form .input-field").val() != ""){
+      $(".sendButton").addClass("active");
+    }else{
+      $(".sendButton").removeClass("active");
+    }
+})
+
+$(".sendButton").click(()=>{
+  const data = { 
+  ID_INCOMING: `${Incoming_id}`,
+  ID_OUTGOING: `${Outcoming_id}`,
+  Mess: `${$("form .input-field").val()}`};
+  let reqHeader = new Headers();
+  //body format json
+  reqHeader.append('Content-Type', 'application/json');
+  let initObject = {
+    method: 'POST', 
+    headers: reqHeader, 
+    body: JSON.stringify(data),
+  };
+  var userRequest = new Request('http://localhost:3000/sendChat', initObject);
+  fetch(userRequest)
+    .then(function (response) {
+        return response.text();
+    })
+    .then(function (data) {
+      $("form .input-field").val("");
+      $(".sendButton").removeClass("active");
+      $(".chat-box").html((i,oldHTML) => `${oldHTML}`+
+        `<div class="chat outgoing">
+        <div class="details">
+        <p> ${data} </p>
+        </div>
+        </div>`) 
+    })
+    .catch(function (err) {
+        console.log("Error!!!", err);
+    });
+  $(".chat-box").animate({scrollTop: $(".chat-box")[0].scrollHeight},500);
+})
+
+setInterval(() =>{
+  const data = { 
+  ID_INCOMING: `${Incoming_id}`,
+  ID_OUTGOING: `${Outcoming_id}`};
+  let list ='';
+  let reqHeader = new Headers();
+  reqHeader.append('Content-Type', 'application/json');
+  let initObject = {
+    method: 'POST', 
+    headers: reqHeader,
+    body: JSON.stringify(data),
+  };
+  var userRequest = new Request('http://localhost:3000/getChat', initObject);
+  fetch(userRequest)
+    .then(function (response) {
+        return response.json();
+    })
+    .then(function (data) {
+      data.forEach(element => {
+        if (element.ID_INCOMING == Incoming_id){
+          list += `<div class="chat outgoing">
+                  <div class="details">
+                  <p> ${element.Message} </p>
+                  </div>
+                  </div>`;
+          active = true;
+          }
+        else {
+          list += `<div class="chat incoming">
+                  <div class="details">                             
+                  <p> ${element.Message} </p>
+                  </div>
+                  </div>`;
+          } 
+      })
+      $(".chat-box").html(list);
+      if(active){
+        active = false;
+        $(".chat-box").animate({scrollTop: $(".chat-box")[0].scrollHeight},0);
+      }
+    })
+    .catch(function (err) {
+        console.log("Error!!!", err);
+    });
+}, 100);
+</script>
+</body>
+</html>
